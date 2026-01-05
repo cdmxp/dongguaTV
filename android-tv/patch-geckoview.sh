@@ -4,7 +4,7 @@
 
 set -e
 
-GECKOVIEW_DIR="./node_modules/@web-media/capacitor-geckoview/capacitor"
+GECKOVIEW_DIR="./node_modules/@web-media/capacitor-geckoview/android"
 STATUSBAR_DIR="./node_modules/@capacitor/status-bar/android"
 
 echo "🔧 Patching GeckoView Capacitor plugin..."
