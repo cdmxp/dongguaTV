@@ -5116,7 +5116,7 @@
                                     },
 
                                     formatTime(seconds) {
-                                        if (!seconds) return '未设置';
+                                        if (!seconds) return '点击设定';
                                         const m = Math.floor(seconds / 60);
                                         const s = Math.floor(seconds % 60);
                                         return `${m}:${s.toString().padStart(2, '0')}`;
@@ -5125,7 +5125,7 @@
                                     initUI() {
                                         const panel = document.querySelector('.dplayer-setting-origin-panel');
                                         if (!panel || panel.querySelector('.dplayer-setting-skip-group')) {
-                                            if (panel) this.updateUI(); // 如果已存在，仅更新数据
+                                            if (panel) this.updateUI();
                                             return;
                                         }
 
@@ -5140,14 +5140,14 @@
                                                 </div>
                                                 <div class="dplayer-setting-item dplayer-setting-set-intro" style="cursor: pointer; justify-content: space-between;">
                                                     <span class="dplayer-label">设置片头</span>
-                                                    <span class="dplayer-value intro-val" style="color: #e50914;">${this.formatTime(this.config.intro)}</span>
+                                                    <span class="dplayer-value intro-val" style="opacity: 0.8;">${this.formatTime(this.config.intro)}</span>
                                                 </div>
                                                 <div class="dplayer-setting-item dplayer-setting-set-outro" style="cursor: pointer; justify-content: space-between;">
                                                     <span class="dplayer-label">设置片尾</span>
-                                                    <span class="dplayer-value outro-val" style="color: #e50914;">${this.formatTime(this.config.outro)}</span>
+                                                    <span class="dplayer-value outro-val" style="opacity: 0.8;">${this.formatTime(this.config.outro)}</span>
                                                 </div>
-                                                 <div class="dplayer-setting-item dplayer-setting-del-config" style="cursor: pointer; color: #888; font-size: 12px; justify-content: center; margin-top: 5px;">
-                                                    <i class="fas fa-trash-alt"></i> 删除跳过配置
+                                                 <div class="dplayer-setting-item dplayer-setting-del-config" style="cursor: pointer; color: #888; font-size: 12px; justify-content: center; height: 30px; margin-top: 0;">
+                                                    <i class="fas fa-trash-alt" style="margin-right:5px;"></i> 清除配置
                                                 </div>
                                             </div>
                                         `;
@@ -5166,19 +5166,36 @@
                                         // Set Intro
                                         group.querySelector('.dplayer-setting-set-intro').addEventListener('click', () => {
                                             if (!dp.video) return;
-                                            this.config.intro = Math.floor(dp.video.currentTime);
+                                            const time = Math.floor(dp.video.currentTime);
+                                            // 片头限制：不能超过视频的一半
+                                            if (dp.video.duration && time > dp.video.duration * 0.5) {
+                                                dp.notice('片头时间不能超过视频时长的一半', 2000);
+                                                return;
+                                            }
+                                            this.config.intro = time;
                                             this.config.enabled = true;
                                             this.save();
-                                            dp.notice(`已设置片头: ${this.formatTime(this.config.intro)}`);
+                                            dp.notice(`已设置片头截止点: ${this.formatTime(this.config.intro)}`);
                                         });
 
                                         // Set Outro
                                         group.querySelector('.dplayer-setting-set-outro').addEventListener('click', () => {
                                             if (!dp.video) return;
-                                            this.config.outro = Math.floor(dp.video.currentTime);
+                                            const time = Math.floor(dp.video.currentTime);
+                                            // 片尾限制：不能在视频前半部分，且必须大于片头
+                                            if (dp.video.duration && time < dp.video.duration * 0.5) {
+                                                dp.notice('片尾起点通常在视频后半部分，请拖动进度条后再设置', 3000);
+                                                return;
+                                            }
+                                            if (this.config.intro > 0 && time <= this.config.intro) {
+                                                dp.notice('片尾时间必须晚于片头', 2000);
+                                                return;
+                                            }
+
+                                            this.config.outro = time;
                                             this.config.enabled = true;
                                             this.save();
-                                            dp.notice(`已设置片尾: ${this.formatTime(this.config.outro)}`);
+                                            dp.notice(`已设置片尾起点: ${this.formatTime(this.config.outro)}`);
                                         });
 
                                         // Delete Config
@@ -5244,7 +5261,9 @@
                                     if (iconsRight && !iconsRight.querySelector('.dplayer-next-icon')) {
                                         const nextBtnHtml = `
                                             <div class="dplayer-icon dplayer-next-icon" data-balloon="下一集" data-balloon-pos="up">
-                                                <span class="dplayer-icon-content"><i class="fas fa-step-forward" aria-hidden="true"></i></span>
+                                                <span class="dplayer-icon-content" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                                                    <i class="fas fa-step-forward" aria-hidden="true" style="font-size:18px;"></i>
+                                                </span>
                                             </div>
                                         `;
                                         iconsRight.insertAdjacentHTML('afterbegin', nextBtnHtml);

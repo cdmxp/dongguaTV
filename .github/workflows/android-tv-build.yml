@@ -54,9 +54,29 @@ jobs:
       - name: Patch Capacitor libraries for AGP 8
         working-directory: android-tv
         run: |
-          echo "🔧 Patching @capacitor/android..."
-          # Fix: Namespace not specified (AGP 8+)
+          echo "🔧 Patching dependencies for AGP 8 compatibility..."
+          
+          # 1. Patch @capacitor/android (Core)
           sed -i '/android {/a \    namespace "com.getcapacitor.android"' node_modules/@capacitor/android/capacitor/build.gradle
+
+          # 2. Patch capacitor-cordova-android-plugins (Generated)
+          if [ -f "android/capacitor-cordova-android-plugins/build.gradle" ]; then
+             sed -i '/android {/a \    namespace "capacitor.android.plugins"' android/capacitor-cordova-android-plugins/build.gradle
+          fi
+
+          # 3. Patch @capacitor/status-bar
+          if [ -f "node_modules/@capacitor/status-bar/android/build.gradle" ]; then
+             sed -i '/android {/a \    namespace "com.capacitorjs.plugins.statusbar"' node_modules/@capacitor/status-bar/android/build.gradle
+          fi
+
+          # 4. Patch @web-media/capacitor-geckoview
+          if [ -f "node_modules/@web-media/capacitor-geckoview/android/build.gradle" ]; then
+             # Try to extract package name from manifest
+             pkg=$(grep -o 'package="[^"]*"' node_modules/@web-media/capacitor-geckoview/android/src/main/AndroidManifest.xml | cut -d'"' -f2 || echo "com.web_media.capacitor_geckoview")
+             if [ -z "$pkg" ]; then pkg="com.web_media.capacitor_geckoview"; fi
+             echo "  Patching geckoview with namespace: $pkg"
+             sed -i "/android {/a \    namespace \"$pkg\"" node_modules/@web-media/capacitor-geckoview/android/build.gradle
+          fi
 
       - name: Apply GeckoView patches
         working-directory: android-tv
